@@ -75,12 +75,23 @@ def test_f_register_decodes_as_utf8_under_an_ascii_locale():
     )
 
 
-def test_f_register_is_byte_exact_against_its_source():
-    """Whichever branch served it, the text re-encodes to the source bytes.
+def test_f_register_matches_its_source_exactly():
+    """Whichever branch served it, the text matches the source's text.
 
     This is the mojibake detector that works in-process: mojibake changes the
-    character sequence, so the round-trip stops matching even though every
+    character sequence, so the comparison stops matching even though every
     ASCII assertion still passes.
+
+    TEXT to TEXT, deliberately. The first version of this test compared
+    `_f_register_text().encode("utf-8")` to `source.read_bytes()` — and
+    `read_text()` applies universal-newline translation while `read_bytes()`
+    does not, so on any checkout that stores CRLF the two could never be
+    equal. It went red on all three Windows legs of the first hosted run
+    (doc 105 §11.5). That is doc 97's newline class, written by me into the
+    guard for doc 98's encoding class, in the same file. Newline policy is not
+    what this test is about; mojibake is, and mojibake changes CHARACTERS, so
+    the text comparison detects it and the byte comparison only added a
+    platform dependency.
     """
     from iamf_sentinel_mcp.server import _F_REGISTER_BUNDLED, _f_register_text
     import iamf_sentinel_mcp.server as srv
@@ -88,7 +99,7 @@ def test_f_register_is_byte_exact_against_its_source():
     live = (Path(srv._sentinel_pkg.__file__).resolve().parent.parent
             / "F_TO_CHECK.md")
     source = live if live.is_file() else _F_REGISTER_BUNDLED
-    assert _f_register_text().encode("utf-8") == source.read_bytes()
+    assert _f_register_text() == source.read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("path_attr", ["_F_REGISTER_BUNDLED"])

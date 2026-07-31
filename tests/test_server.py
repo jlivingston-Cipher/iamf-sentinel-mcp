@@ -224,7 +224,16 @@ def test_loom_run_missing_toolchain_is_actionable(project: Path, tmp_path: Path)
                    out_dir=str(out), toolchain="/nonexistent-toolchain")
     assert res["ok"] is False
     assert res["failures"], "expected step failures"
-    assert any("/nonexistent-toolchain" in f for f in res["failures"])
+    # Doc 99's rule: plans keep their `$`-tokens and are platform-invariant;
+    # ledgers and MESSAGES resolve, so they carry the platform's path flavour.
+    # This message renders `\nonexistent-toolchain\src\...` on Windows, so
+    # matching a POSIX literal went red on both Windows legs of ci #1
+    # (doc 105 §11.5). Normalize separators first — the claim under test is
+    # that the failure NAMES the root it was handed, not how an OS spells a
+    # separator. Doc 99 fixed this exact class in loom's own suite; this repo
+    # was written before that lesson and never swept.
+    failures = [f.replace("\\", "/") for f in res["failures"]]
+    assert any("/nonexistent-toolchain" in f for f in failures)
     assert res["ledger_path"] and Path(res["ledger_path"]).is_file()
 
 
