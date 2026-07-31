@@ -32,6 +32,21 @@ Code comments throughout cite an internal numbered design docset (`doc NN`), ADR
 - `fregister://catalog` — the failure-mode register (F_TO_CHECK.md): the
   WP1/WP3 failure catalogue mapped to Sentinel checks, as markdown.
 
+**Verified platforms.** Every push runs this server's test suite on **Linux, macOS, and
+Windows** against **Python 3.11 and 3.12** — [`ci.yml`](.github/workflows/ci.yml) is the
+claim; the matrix is the evidence. Two boundaries come with it. First, this package is a
+thin wrapper: a green matrix here says the *server* behaves on those platforms, not that
+the conformance logic does — that is gated in
+[`iamf-sentinel`](https://github.com/jlivingston-Cipher/iamf-sentinel) and
+[`iamf-loom`](https://github.com/jlivingston-Cipher/iamf-loom) by their own matrices.
+Second, **no encoder toolchain is installed in CI**, so `loom_run`'s execution path is
+exercised only through its failure behaviour — that a missing binary yields an actionable
+error rather than a traceback. Its subprocess half is unverified here by design; `iamf-loom`
+owns that claim. The matrix additionally carries a `wheel-only` leg with no sibling source
+checkout, which is what `pip install iamf-sentinel-mcp` actually gives you. Sample-gated
+tests skip in that environment by design. Nothing here is claimed for a platform that does
+not have a green leg.
+
 ## Run
 
 ```bash

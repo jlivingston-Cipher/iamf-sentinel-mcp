@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "iamf-sentinel-mcp"
-version = "0.2.0"
+version = "0.2.1"
 description = "MCP server for the iamf-sentinel IAMF conformance validator and the iamf-loom packager"
 readme = "README.md"
 license = "Apache-2.0"                     # PEP 639 SPDX string (item 27)
