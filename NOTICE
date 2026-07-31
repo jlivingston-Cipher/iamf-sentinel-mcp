@@ -1,0 +1,10 @@
+iamf-sentinel-mcp
+Copyright 2026 The iamf-sentinel authors
+
+An MCP server exposing the iamf-sentinel IAMF conformance validator and
+the iamf-loom packager. The server layer is original work; conformance
+and packaging logic live in the iamf-sentinel and iamf-loom packages
+(both Apache-2.0), which this server invokes through their public APIs.
+
+"IAMF" is used descriptively. "Eclipsa" is a trademark of its owner and
+is not used in this project's naming.

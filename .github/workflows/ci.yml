@@ -1,0 +1,97 @@
+# iamf-sentinel-mcp CI — 3-OS × 2-Python matrix (doc 88 Tier B, item 24 shape,
+# authored doc 105 BEFORE stage (v) publishes rather than four cycles after).
+#
+# Item 24 cost four rounds and three pushes per repo and found five real
+# defects, none of which was reachable from a green local suite. Stage (v) had
+# the same green local suite (22/22, doc 78) and had never been run any other
+# way. Doc 105 ran it the other ways first; this file is what keeps it that way.
+#
+# What the pre-publication sweep found in this tree (doc 105 §3):
+#
+#   * The suite did not run from a standalone clone. `tests/test_server.py`
+#     hard-coded `parents[2] / "sentinel-oss"` — the internal monorepo
+#     directory name — to reach the core's fixture builders, so two tests
+#     FAILED (not skipped) with `ModuleNotFoundError: fixtures` anywhere
+#     outside the private tree. Identical to the doc-97 finding in the two
+#     repos that were already public when it was found.
+#   * `_f_register_text()` read the F-register in the LOCALE encoding. The
+#     register carries 356 non-ASCII bytes; under cp1252 that does not raise,
+#     it mojibakes silently — and the consumer of `fregister://catalog` is a
+#     language model, on a platform (Windows) that is a first-class MCP client
+#     host. `tests/test_encoding.py` is the named regression.
+#   * `mcp>=1.27.0` was unbounded, and mcp 2.0.0 (released 2026-07-28, one day
+#     before this package was written) removed `mcp.server.fastmcp` outright.
+#     A `pip install` of the package as staged resolved to an SDK it could not
+#     import. See `pyproject.toml`; the bound there is load-bearing, and this
+#     matrix is what would have caught it.
+#
+# Why two checkouts. Two tests build real IAMF bytes with the core's
+# `fixtures/build.py`, which ships in the iamf-sentinel SOURCE tree and not in
+# the installed wheel. The sibling checkout supplies it; `tests/conftest.py`
+# resolves it by name (`iamf-sentinel/`, `sentinel-oss/`, or
+# `$IAMF_SENTINEL_SRC`) and skips those two cleanly when absent. All three
+# resolution branches were exercised in doc 105 §5 — a resolver that only ever
+# skips is not a fix, so each branch was measured finding the fixtures
+# (23 passed / 3 skipped) as well as missing them.
+#
+# Why the extra `wheel-only` job. The two-checkout layout puts the core's
+# source on `sys.path`, which SHADOWS the installed wheel — so the matrix above
+# tests this server against the core's source tree, not against the artifact a
+# user actually gets from PyPI. That is the configuration item 24 was about.
+# The extra job pins it: no sibling checkout, wheel only, 20 passed / 6 skipped.
+#
+# Claims discipline (item 23): no OS is named in README.md until its leg here
+# is green. Removing an OS from this matrix means removing it from that
+# sentence in the same commit.
+#
+# Provenance note (doc 105 §5). The Linux legs below were executed verbatim in
+# the doc-105 session against the live PyPI index (iamf-sentinel 0.3.2,
+# iamf-loom 0.8.1): two-checkout 23 passed / 3 skipped / 0 failed, wheel-only
+# 20 passed / 6 skipped / 0 failed. macOS and Windows are authored blind, as
+# the core's were. This server hashes nothing, execs nothing, and times
+# nothing, so the doc-97/98/99 Windows classes (CRLF hashing, %PATHEXT%,
+# time.monotonic granularity) have no surface here — the locale-encoding class
+# was the one that did, and it is fixed and guarded above.
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: iamf-sentinel-mcp
+      # The core's SOURCE tree — supplies fixtures/ (not shipped in the wheel).
+      - uses: actions/checkout@v4
+        with:
+          repository: jlivingston-Cipher/iamf-sentinel
+          path: iamf-sentinel
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install -e ".[test]"
+        working-directory: iamf-sentinel-mcp
+      # Sample-gated tests skip cleanly here; zero failures is the gate.
+      - run: python -m pytest tests -q
+        working-directory: iamf-sentinel-mcp
+
+  wheel-only:
+    # What a user gets from `pip install iamf-sentinel-mcp`: no source
+    # checkout beside it, both dependencies resolved from the index as wheels.
+    # The two fixture-builder tests and the drift tripwire skip here by design.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e ".[test]"
+      - run: python -m pytest tests -q

@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=77"]   # PEP 639 SPDX license strings
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iamf-sentinel-mcp"
+version = "0.2.0"
+description = "MCP server for the iamf-sentinel IAMF conformance validator and the iamf-loom packager"
+readme = "README.md"
+license = "Apache-2.0"                     # PEP 639 SPDX string (item 27)
+license-files = ["LICENSE", "NOTICE"]
+requires-python = ">=3.11"
+authors = [{ name = "The iamf-sentinel authors" }]
+keywords = ["iamf", "immersive-audio", "mcp", "conformance", "validator"]
+dependencies = [
+    # v2 line (doc 105 option B): FastMCP was removed in mcp 2.0.0; this
+    # server is built on its replacement, MCPServer. The floor is the major
+    # version and the ceiling keeps the same discipline one major up.
+    "mcp>=2,<3",
+    "iamf-sentinel>=0.3",   # sentinel-oss (L1/L2 need no toolchain)
+    "iamf-loom>=0.8",
+]
+
+[project.urls]
+Homepage      = "https://github.com/jlivingston-Cipher/iamf-sentinel-mcp"
+Repository    = "https://github.com/jlivingston-Cipher/iamf-sentinel-mcp"
+Issues        = "https://github.com/jlivingston-Cipher/iamf-sentinel-mcp/issues"
+"IAMF Sentinel" = "https://github.com/jlivingston-Cipher/iamf-sentinel"
+
+[project.scripts]
+iamf-sentinel-mcp = "iamf_sentinel_mcp.server:main"
+
+[tool.setuptools.packages.find]
+include = ["iamf_sentinel_mcp*"]
+
+[tool.setuptools.package-data]
+iamf_sentinel_mcp = ["data/F_TO_CHECK.md", "py.typed"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+# Lint with ruff defaults (E4/E7/E9/F). The fixture/dev tier deliberately uses a
+# compact one-line idiom; the per-file ignores below codify that two-tier style.
+target-version = "py311"
+
