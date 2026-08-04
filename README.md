@@ -76,3 +76,10 @@ Claude Desktop / Code config:
 Apache-2.0 (see `LICENSE` / `NOTICE`), like everything else in the
 iamf-sentinel / iamf-loom stack. Support posture: see the core repo's
 [`SUPPORT.md`](https://github.com/jlivingston-Cipher/iamf-sentinel/blob/main/SUPPORT.md).
+
+## Related projects
+
+- [`Inseglet`](https://github.com/inseglet-audio/inseglet) — the authoring-side companion: a
+  native REAPER MCP extension for immersive authoring (beds, ambisonics, ADM) whose
+  `spatial.export_loom_manifest` writes manifests this server's `loom_compile` / `loom_run`
+  accept. Run both servers in one agent session for an author → package → validate loop.
