@@ -46,8 +46,13 @@
 #
 # Provenance note (doc 105 §5). The Linux legs below were executed verbatim in
 # the doc-105 session against the live PyPI index (iamf-sentinel 0.3.2,
-# iamf-loom 0.8.1): two-checkout 23 passed / 3 skipped / 0 failed, wheel-only
-# 20 passed / 6 skipped / 0 failed. macOS and Windows are authored blind, as
+# iamf-loom 0.8.1). **Corrected doc 130:** the figures first written here were
+# 23/3 and 20/6, measured on an intra-session tree state, and no published
+# commit has ever produced them. Every hosted run since the first one
+# (30620905896, 2026-07-31) has printed two-checkout 24 passed / 3 skipped
+# and wheel-only 21 passed / 6 skipped, reproduced locally in both layouts.
+# A figure in a comment is still a claim; this one sat four months beside
+# the gate that could have checked it. macOS and Windows are authored blind, as
 # the core's were. This server hashes nothing, execs nothing, and times
 # nothing, so the doc-97/98/99 Windows classes (CRLF hashing, %PATHEXT%,
 # time.monotonic granularity) have no surface here — the locale-encoding class

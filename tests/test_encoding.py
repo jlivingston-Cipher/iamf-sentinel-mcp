@@ -6,7 +6,9 @@ ten sites in `iamf-loom`, one in `iamf-sentinel` — and fixed them. The
 `_f_register_text()` called `Path.read_text()` with no `encoding=` on both the
 live-register and bundled-snapshot branches.
 
-`F_TO_CHECK.md` carries 356 non-ASCII bytes (§ ± × Δ Σ – — → − ≈ ≠ ≤ ✅ ⛔ …).
+`F_TO_CHECK.md` carries several hundred non-ASCII bytes (§ ± × Δ Σ – — → − ≈ ≠ ≤ ✅ ⛔ … — 402
+at the time of writing; the figure is illustrative and is deliberately not asserted
+anywhere, because it moves with every register edit).
 Under a cp1252 client — the Windows default, and Windows is a first-class MCP
 client platform — the no-encoding read does **not** raise. It silently
 mojibakes: `→` is served to the model as `â†'`. Nothing in the suite caught
