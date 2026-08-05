@@ -15,7 +15,9 @@
 #     outside the private tree. Identical to the doc-97 finding in the two
 #     repos that were already public when it was found.
 #   * `_f_register_text()` read the F-register in the LOCALE encoding. The
-#     register carries 356 non-ASCII bytes; under cp1252 that does not raise,
+#     register carries several hundred non-ASCII bytes (356 when this was
+#     written, 402 today — illustrative, asserted nowhere); under cp1252 that
+#     does not raise,
 #     it mojibakes silently — and the consumer of `fregister://catalog` is a
 #     language model, on a platform (Windows) that is a first-class MCP client
 #     host. `tests/test_encoding.py` is the named regression.
@@ -32,13 +34,13 @@
 # `$IAMF_SENTINEL_SRC`) and skips those two cleanly when absent. All three
 # resolution branches were exercised in doc 105 §5 — a resolver that only ever
 # skips is not a fix, so each branch was measured finding the fixtures
-# (23 passed / 3 skipped) as well as missing them.
+# (24 passed / 3 skipped) as well as missing them.
 #
 # Why the extra `wheel-only` job. The two-checkout layout puts the core's
 # source on `sys.path`, which SHADOWS the installed wheel — so the matrix above
 # tests this server against the core's source tree, not against the artifact a
 # user actually gets from PyPI. That is the configuration item 24 was about.
-# The extra job pins it: no sibling checkout, wheel only, 20 passed / 6 skipped.
+# The extra job pins it: no sibling checkout, wheel only, 21 passed / 6 skipped.
 #
 # Claims discipline (item 23): no OS is named in README.md until its leg here
 # is green. Removing an OS from this matrix means removing it from that
@@ -50,9 +52,14 @@
 # 23/3 and 20/6, measured on an intra-session tree state, and no published
 # commit has ever produced them. Every hosted run since the first one
 # (30620905896, 2026-07-31) has printed two-checkout 24 passed / 3 skipped
-# and wheel-only 21 passed / 6 skipped, reproduced locally in both layouts.
+# and wheel-only 21 passed / 6 skipped, reproduced locally in both layouts —
+# re-confirmed on run 30980527304, all seven legs.
 # A figure in a comment is still a claim; this one sat four months beside
-# the gate that could have checked it. macOS and Windows are authored blind, as
+# the gate that could have checked it. **And the first correction (9076821)
+# fixed ONE site of four** — two more in this file and one in server.py kept
+# the old numbers, eleven lines from a paragraph announcing the correction.
+# Finding a stale claim scopes the FIX to where you looked; sweeping the file
+# is the other half (directive 16). d130b is that sweep. macOS and Windows are authored blind, as
 # the core's were. This server hashes nothing, execs nothing, and times
 # nothing, so the doc-97/98/99 Windows classes (CRLF hashing, %PATHEXT%,
 # time.monotonic granularity) have no surface here — the locale-encoding class

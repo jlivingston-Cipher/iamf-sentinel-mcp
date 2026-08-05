@@ -284,8 +284,9 @@ def _f_register_text() -> str:
     snapshot bundled as package data at staging time.
 
     Always UTF-8, never the locale encoding (doc 98 class; doc 105): the
-    register carries 356 non-ASCII bytes and a cp1252 client would mojibake
-    them silently rather than fail."""
+    register carries several hundred non-ASCII bytes (402 at the time of
+    writing; illustrative, asserted nowhere) and a cp1252 client would
+    mojibake them silently rather than fail."""
     live = Path(_sentinel_pkg.__file__).resolve().parent.parent / "F_TO_CHECK.md"
     if live.is_file():
         return live.read_text(encoding="utf-8")
