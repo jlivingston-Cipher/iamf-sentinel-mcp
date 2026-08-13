@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.jlivingston-Cipher/iamf-sentinel-mcp",
+  "title": "IAMF Sentinel",
+  "description": "MCP server for the iamf-sentinel IAMF conformance validator and the iamf-loom packager",
+  "repository": {
+    "url": "https://github.com/jlivingston-Cipher/iamf-sentinel-mcp",
+    "source": "github"
+  },
+  "version": "0.2.2",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "iamf-sentinel-mcp",
+      "version": "0.2.2",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

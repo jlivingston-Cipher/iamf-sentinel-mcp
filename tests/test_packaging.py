@@ -46,3 +46,90 @@ def test_server_advertises_its_version_to_clients():
     from iamf_sentinel_mcp.server import build_server
     import iamf_sentinel_mcp
     assert build_server().version == iamf_sentinel_mcp.__version__
+
+
+# --- doc 178: the MCP registry ownership gate -------------------------------
+#
+# The official registry verifies that WE own the PyPI distribution by looking
+# for the literal string `mcp-name: <server name>` in the package's published
+# description (the README, as it lands in the wheel's METADATA). Nothing else
+# in the build asserts that string, and a README edit that drops it would not
+# break any test — it would silently make the published release unverifiable,
+# and the registry entry would then be pinned to a version we can no longer
+# re-cut, because PyPI never lets a version be re-uploaded.
+#
+# Doc 177's lesson, applied: a guard that has only ever been run on the fixed
+# shape has no measured discriminating power. Both tests below were run
+# against a wheel rebuilt from the reverted README/server.json and both FAILED
+# there before either was believed here.
+
+MCP_SERVER_NAME = "io.github.jlivingston-Cipher/iamf-sentinel-mcp"
+
+
+def test_registry_ownership_marker_reaches_the_published_description():
+    """`mcp-name: …` must survive into what PyPI actually serves.
+
+    Prefers the INSTALLED distribution's METADATA — the artifact the registry
+    reads — and only falls back to the source README when the distribution is
+    not installed at all (the two-checkout layout). It never prefers the source
+    file over the built one: that substitution is the exact failure the gate
+    exists to catch.
+    """
+    import pathlib
+    from importlib.metadata import PackageNotFoundError, metadata
+
+    expected = f"mcp-name: {MCP_SERVER_NAME}"
+    try:
+        md = metadata("iamf-sentinel-mcp")
+    except PackageNotFoundError:
+        md = None
+
+    if md is not None:
+        text = md.get_payload() or md.get("Description") or ""
+        source = "installed distribution METADATA"
+    else:
+        readme = pathlib.Path(__file__).resolve().parents[1] / "README.md"
+        if not readme.is_file():                          # pragma: no cover
+            pytest.skip("neither an installed distribution nor a source README")
+        text = readme.read_text(encoding="utf-8")
+        source = "README.md (source checkout)"
+
+    assert expected in text, (
+        "%r is absent from the %s — the MCP registry cannot verify ownership "
+        "of this distribution, so `mcp-publisher publish` would be rejected"
+        % (expected, source)
+    )
+
+
+def test_server_json_agrees_with_the_marker_and_the_distribution():
+    """One name, four places: server.json, the README marker, the dist, the module."""
+    import json
+    import pathlib
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    readme = root / "README.md"
+    server_json = root / "server.json"
+    if not readme.is_file():                              # pragma: no cover
+        pytest.skip("not a source checkout; server.json is not shipped in the wheel")
+    assert server_json.is_file(), (
+        "README.md is beside these tests but server.json is not — the registry "
+        "listing's own manifest has been deleted from the repository root"
+    )
+
+    sj = json.loads(server_json.read_text(encoding="utf-8"))
+    assert sj["name"] == MCP_SERVER_NAME
+    assert len(sj["description"]) <= 100, "the registry schema caps description at 100"
+
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    assert readme.count(f"mcp-name: {sj['name']}") == 1, (
+        "server.json names %r; the README marker must name it exactly once" % sj["name"]
+    )
+
+    pypi = [p for p in sj["packages"] if p["registryType"] == "pypi"]
+    assert len(pypi) == 1
+    assert pypi[0]["identifier"] == "iamf-sentinel-mcp"
+    assert pypi[0]["version"] == sj["version"] == iamf_sentinel_mcp.__version__, (
+        "server.json %r / package %r / module %r must agree — the registry pins the "
+        "listing to a version that must exist on PyPI"
+        % (sj["version"], pypi[0]["version"], iamf_sentinel_mcp.__version__)
+    )

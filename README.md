@@ -1,5 +1,7 @@
 # iamf-sentinel-mcp
 
+<!-- mcp-name: io.github.jlivingston-Cipher/iamf-sentinel-mcp -->
+
 An [MCP](https://modelcontextprotocol.io) server exposing
 **[iamf-sentinel](https://github.com/jlivingston-Cipher/iamf-sentinel)** (IAMF conformance validator) and
 **[iamf-loom](https://github.com/jlivingston-Cipher/iamf-loom)** (IAMF packager) to MCP clients — Claude Desktop,

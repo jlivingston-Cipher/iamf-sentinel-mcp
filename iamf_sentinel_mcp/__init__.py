@@ -8,4 +8,4 @@ execution, file writes, the Sentinel gate — registers only when the server
 is launched with `--enable-run` (Cycle B, doc 75).
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
