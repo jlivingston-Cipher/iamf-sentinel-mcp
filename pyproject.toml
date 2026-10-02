@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "iamf-sentinel-mcp"
-version = "0.2.2"
+version = "0.2.3"
 description = "MCP server for the iamf-sentinel IAMF conformance validator and the iamf-loom packager"
 readme = "README.md"
 license = "Apache-2.0"                     # PEP 639 SPDX string (item 27)
@@ -17,7 +17,9 @@ dependencies = [
     # server is built on its replacement, MCPServer. The floor is the major
     # version and the ceiling keeps the same discipline one major up.
     "mcp>=2,<3",
-    "iamf-sentinel>=0.3",   # sentinel-oss (L1/L2 need no toolchain)
+    # 0.4.0 is what makes iamf_inspect read v2.0.0 Mix Presentations and frames,
+    # and what supplies the profile names for 3-5 (shown verbatim from core).
+    "iamf-sentinel>=0.4.0",   # sentinel-oss (L1/L2 need no toolchain)
     "iamf-loom>=0.8",
 ]
 

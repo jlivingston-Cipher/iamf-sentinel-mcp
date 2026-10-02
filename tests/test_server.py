@@ -358,3 +358,61 @@ def test_main_registers_loom_run_only_with_flag(monkeypatch):
     monkeypatch.setattr("sys.argv", ["iamf-sentinel-mcp", "--enable-run"])
     srv.main()
     assert calls == ["build(enable_run=True)", "ran"]
+
+
+# ================================ profile names come from core (0.2.3)
+
+# iamf_inspect shows primary_profile / additional_profile through the core's
+# own PROFILE_NAME table and keeps the bare integer for a reserved value --
+# the same contract the core's JSON report states for summary.stream. Core
+# 0.4.0 names all six profiles (IAMF v2.0.0: 3 Base-Advanced, 4 Advanced-1,
+# 5 Advanced-2); 0.3.x named only 0..2, so against it 3..5 came back as bare
+# numbers. The streams below are a bare Sequence Header OBU (type 31, no
+# flags, 6-byte payload: ia_code + the two profile bytes), built inline so the
+# test needs no source checkout and runs in the wheel-only layout too.
+
+def _sequence_header_only(tmp_path: Path, primary: int, additional: int) -> Path:
+    p = tmp_path / f"seqhdr-{primary}-{additional}.iamf"
+    p.write_bytes(bytes([31 << 3, 6]) + b"iamf" + bytes([primary, additional]))
+    return p
+
+
+PROFILE_NAMES = {0: "Simple", 1: "Base", 2: "Base-Enhanced",
+                 3: "Base-Advanced", 4: "Advanced-1", 5: "Advanced-2"}
+
+
+@pytest.mark.parametrize("primary,additional", [
+    (0, 5), (1, 4), (2, 3), (3, 2), (4, 1), (5, 0),
+])
+def test_inspect_names_all_six_profiles(tmp_path: Path, primary: int, additional: int):
+    out = iamf_inspect(str(_sequence_header_only(tmp_path, primary, additional)))
+    sh = out["sequence_header"]
+    assert sh["primary_profile"] == PROFILE_NAMES[primary]
+    assert sh["additional_profile"] == PROFILE_NAMES[additional]
+
+
+@pytest.mark.parametrize("primary,additional", [
+    (6, 0), (0, 6), (7, 200), (255, 255),
+])
+def test_inspect_reserved_profile_values_stay_bare_integers(
+        tmp_path: Path, primary: int, additional: int):
+    sh = iamf_inspect(str(_sequence_header_only(tmp_path, primary, additional)))[
+        "sequence_header"]
+    for key, want in (("primary_profile", primary), ("additional_profile", additional)):
+        got = sh[key]
+        if want in PROFILE_NAMES:
+            assert got == PROFILE_NAMES[want]
+        else:
+            # not a label such as "reserved (6)": the JSON type is unchanged
+            assert type(got) is int and got == want, (key, got)
+            assert json.loads(json.dumps(got)) == want
+
+
+@pytest.mark.parametrize("primary", [0, 1, 2, 3, 4, 5, 6, 255])
+def test_inspect_and_validate_agree_on_primary_profile(tmp_path: Path, primary: int):
+    """One value, two tools: the server must not render a profile differently
+    from the core report it wraps (summary.stream.primary_profile)."""
+    path = str(_sequence_header_only(tmp_path, primary, 0))
+    seen = iamf_inspect(path)["sequence_header"]["primary_profile"]
+    reported = iamf_validate(path)["summary"]["stream"]["primary_profile"]
+    assert seen == reported and type(seen) is type(reported)
