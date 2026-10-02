@@ -8,9 +8,10 @@ An [MCP](https://modelcontextprotocol.io) server exposing
 Claude Code, and any other agent runtime that speaks the protocol.
 
 IAMF is the Alliance for Open Media's Immersive Audio Model and Formats
-(v1.1.0). The validator behind this server also reads IAMF v2.0.0 streams and
-recognises its six profiles and checks their limits; object and position
-validation are not yet implemented. This server lets an agent validate IAMF
+(v1.1.0). The validator behind this server also reads IAMF v2.0.0 streams,
+recognises its six profiles and checks their limits, and reads object-based
+elements and the v2.0.0 rendering settings and checks them; positions over
+time and parameter blocks remain unvalidated. This server lets an agent validate IAMF
 files against the spec's conformance rules and compile packaging manifests
 into inspectable, deterministic plans — without executing anything (execution
 is a separate, per-launch opt-in — see below).

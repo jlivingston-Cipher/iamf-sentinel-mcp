@@ -416,3 +416,26 @@ def test_inspect_and_validate_agree_on_primary_profile(tmp_path: Path, primary: 
     seen = iamf_inspect(path)["sequence_header"]["primary_profile"]
     reported = iamf_validate(path)["summary"]["stream"]["primary_profile"]
     assert seen == reported and type(seen) is type(reported)
+
+
+# ============== the register names only checks the installed core has (0.2.4)
+#
+# The bundled F_TO_CHECK.md has described S-210..S-217 since the snapshot
+# followed the core. iamf-sentinel 0.4.0 has no such checks, so under the old
+# floor a client could read about checks the installed validator never runs.
+# The floor is iamf-sentinel>=0.5.0 for that reason, and this pins it: run
+# against core 0.4.0 the test fails and names S-210..S-217.
+
+def test_bundled_register_names_only_checks_the_installed_core_has():
+    import re
+    from sentinel.findings import REGISTRY
+    from iamf_sentinel_mcp.server import _F_REGISTER_BUNDLED
+    text = _F_REGISTER_BUNDLED.read_text(encoding="utf-8")
+    named = set(re.findall(r"S-[0-9]{3}(?![0-9])", text))
+    assert {"S-210", "S-217"} <= named        # the register does describe them
+    wanted = named | {"S-21%d" % i for i in range(8)}
+    missing = sorted(wanted - set(REGISTRY))
+    assert not missing, (
+        "the bundled register describes checks the installed iamf-sentinel "
+        "does not have: %s - the core floor in pyproject.toml is too low"
+        % ", ".join(missing))

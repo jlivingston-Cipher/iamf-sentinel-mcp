@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "iamf-sentinel-mcp"
-version = "0.2.3"
+version = "0.2.4"
 description = "MCP server for the iamf-sentinel IAMF conformance validator and the iamf-loom packager"
 readme = "README.md"
 license = "Apache-2.0"                     # PEP 639 SPDX string (item 27)
@@ -19,7 +19,9 @@ dependencies = [
     "mcp>=2,<3",
     # 0.4.0 is what makes iamf_inspect read v2.0.0 Mix Presentations and frames,
     # and what supplies the profile names for 3-5 (shown verbatim from core).
-    "iamf-sentinel>=0.4.0",   # sentinel-oss (L1/L2 need no toolchain)
+    # 0.5.0 is what has the checks S-210..S-217 that the bundled F_TO_CHECK.md
+    # describes; on an older core the register would name checks that never run.
+    "iamf-sentinel>=0.5.0",   # sentinel-oss (L1/L2 need no toolchain)
     "iamf-loom>=0.8",
 ]
 
