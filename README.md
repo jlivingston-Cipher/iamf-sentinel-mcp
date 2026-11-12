@@ -24,6 +24,7 @@ Code comments throughout cite an internal numbered design docset (`doc NN`), ADR
 |---|---|---|
 | `iamf_validate` | Full conformance report on a `.iamf` / IAMF-in-MP4 file: S-code findings with severities, summary, stream facts. `strict` promotes WARN to failing. | no |
 | `iamf_inspect` | Structure orientation: profiles, codec configs (incl. Opus pre-skip), element/presentation/frame counts, OBU trim totals, MP4 edts/elst presence. | no |
+| `adm_check` | Judge ADM BWF masters (files or folders, albums with `album`, gapless albums with `gapless`) against Dolby's Music Master Delivery Specification v2022.07 and ADM Profile v1.1: every rule PASS, FAIL, WARN or UNDETERMINED, with what was measured, what is required and how to fix it. Reads metadata only; needs an iamf-sentinel with `adm-check`. | no |
 | `loom_compile` | Compile a Loom manifest (YAML/JSON) to its packaging plan — validate-only. Per-target backend/muxer routing with rationale, or M-code diagnostics. | no |
 | `loom_explain` | `loom explain` as text: the compiled plan as its own justification. | no |
 | `loom_run` | Compile **and execute** a manifest: encode, mux, measure, and gate every output through the Sentinel validator. Returns per-target outputs (sha256), gate verdicts, measured loudness, and the run-ledger path. **Only registered when the server is launched with `--enable-run`.** | **yes** |

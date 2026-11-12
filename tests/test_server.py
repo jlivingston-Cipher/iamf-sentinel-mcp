@@ -10,6 +10,7 @@ skip (house pattern) when it is not staged.
 from __future__ import annotations
 
 import asyncio
+import sys
 import struct
 import wave
 from pathlib import Path
@@ -19,7 +20,7 @@ import pytest
 from conftest import needs_oss_src
 
 from iamf_sentinel_mcp.server import (
-    build_server, checks_catalog, f_register, iamf_inspect, iamf_validate,
+    adm_check, build_server, checks_catalog, f_register, iamf_inspect, iamf_validate,
     loom_compile, loom_explain, loom_run, mcodes_catalog,
 )
 
@@ -174,7 +175,7 @@ def test_mcp_session_lists_and_calls():
         async with connect(build_server()) as session:
             tools = await session.list_tools()
             names = {t.name for t in tools.tools}
-            assert {"iamf_validate", "iamf_inspect",
+            assert {"iamf_validate", "iamf_inspect", "adm_check",
                     "loom_compile", "loom_explain"} <= names
             res = await session.call_tool(
                 "loom_compile", {"manifest_path": "/nonexistent/x.yaml"})
@@ -439,3 +440,42 @@ def test_bundled_register_names_only_checks_the_installed_core_has():
         "the bundled register describes checks the installed iamf-sentinel "
         "does not have: %s - the core floor in pyproject.toml is too low"
         % ", ".join(missing))
+
+
+# ============================================================== adm_check
+# The tool marshals `sentinel.adm_check.run`; the core that has it is the
+# source checkout until a release carries it, so the call test needs the
+# checkout (its fixture builder too) and skips on the wheel-only job.
+
+def _core_has_adm_check() -> bool:
+    try:
+        import sentinel.adm_check  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+@needs_oss_src
+@pytest.mark.skipif(not _core_has_adm_check(), reason="installed core has no adm-check")
+def test_adm_check_judges_a_built_master_and_skips_a_stereo_one(tmp_path):
+    from fixtures import dbmd_build as B
+    seg = B.dbmd([B.segment(9, B.segment9(fps=3)), B.segment(10, B.segment10([1, 1]))])
+    (tmp_path / "song.wav").write_bytes(B.adm_wav(channels=2, dbmd_payload=seg))
+    (tmp_path / "song_stereo.wav").write_bytes(B.adm_wav(channels=2, drop=(b"axml", b"chna")))
+    out = adm_check([str(tmp_path)])
+    json.dumps(out)                                   # the tool's result is plain JSON
+    assert out["exit_code"] == 1 and len(out["masters"]) == 1
+    rows = {r["id"]: r for r in out["masters"][0]["rows"]}
+    assert rows["S-511"]["verdict"] == "FAIL" and rows["S-511"]["measured"] == "25 fps"
+    assert rows["S-520"]["verdict"] == "UNDETERMINED"
+    assert out["skipped"] == [str(tmp_path / "song_stereo.wav")]
+
+
+def test_adm_check_on_a_core_without_it_says_so(monkeypatch):
+    monkeypatch.setitem(sys.modules, "sentinel.adm_check", None)
+    out = adm_check(["/nonexistent.wav"])
+    assert out["exit_code"] == 2 and "needs iamf-sentinel" in out["error"]
+
+
+def test_adm_check_is_offered_on_the_wire():
+    assert "adm_check" in _session_tool_names(build_server())

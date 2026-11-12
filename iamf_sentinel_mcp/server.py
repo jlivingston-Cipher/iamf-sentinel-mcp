@@ -1,4 +1,4 @@
-"""The MCP server: the four toolchain-free tools + the catalogue resources,
+"""The MCP server: the five toolchain-free tools + the catalogue resources,
 plus `loom_run` behind an explicit opt-in launch flag (Cycle B).
 
 Wrapper discipline (doc 73 §7): tools marshal existing public APIs and return
@@ -211,6 +211,32 @@ def loom_run(manifest_path: str,
     }
 
 
+def adm_check(paths: list[str], album: bool = False, gapless: bool = False,
+              strict: bool = False) -> dict[str, Any]:
+    """Judge ADM BWF masters against Dolby's published delivery rules.
+
+    `paths` are ADM BWF masters (.wav) or folders; a folder is searched, and
+    WAVE files without axml/chna (a stereo master beside its Atmos one) are
+    listed as skipped. Every rule of the Dolby Atmos Music Master Delivery
+    Specification v2022.07 and the Dolby Atmos Master ADM Profile v1.1
+    (sections 5 and 7) gets PASS, FAIL (a MUST broken), WARN (a SHOULD not
+    met) or UNDETERMINED (not judgeable from the file: loudness, true peak,
+    the LFE low-pass and stereo sync need a measurement; the XML rules are
+    not read). `album` treats masters in one folder as an album; `gapless`
+    adds the gapless-album rules. Returns per-master rows (id, rule, verdict,
+    measured, required, remedy), album rows, skipped files, totals and an
+    exit code (0 nothing failed, 1 a FAIL, or a WARN with `strict`, 2 error).
+    Reads metadata only; a PASS is not Dolby certification.
+    """
+    try:
+        from sentinel.adm_check import run
+    except ImportError:
+        return {"error": "adm_check needs iamf-sentinel with `sentinel adm-check` "
+                         f"(installed: {getattr(_sentinel_pkg, '__version__', 'unknown')})",
+                "exit_code": 2}
+    return run(list(paths), album=album, gapless=gapless, strict=strict)
+
+
 def build_server(enable_run: bool = False) -> MCPServer:
     """Construct a fresh, fully-registered server instance (X-76a factory).
 
@@ -227,7 +253,8 @@ def build_server(enable_run: bool = False) -> MCPServer:
         instructions=(
             "IAMF conformance validation (iamf-sentinel) and packaging-plan "
             "compilation (iamf-loom). Validate IAMF files (.iamf or IAMF-in-MP4) "
-            "and get structured S-code findings; compile Loom manifests to "
+            "and get structured S-code findings; judge ADM BWF masters against "
+            "Dolby's published delivery rules (adm_check); compile Loom manifests to "
             "deterministic packaging plans and read the plan's own justification "
             "via explain. Read checks://catalog for what each S-code means, "
             "mcodes://catalog for Loom's compile diagnostics, and "
@@ -238,6 +265,7 @@ def build_server(enable_run: bool = False) -> MCPServer:
     )
     server.add_tool(iamf_validate)
     server.add_tool(iamf_inspect)
+    server.add_tool(adm_check)
     server.add_tool(loom_compile)
     server.add_tool(loom_explain)
     if enable_run:
