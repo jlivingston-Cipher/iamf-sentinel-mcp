@@ -457,7 +457,7 @@ def _core_has_adm_check() -> bool:
 
 @needs_oss_src
 @pytest.mark.skipif(not _core_has_adm_check(), reason="installed core has no adm-check")
-def test_adm_check_judges_a_built_master_and_skips_a_stereo_one(tmp_path):
+def test_adm_check_judges_a_built_master_and_pairs_its_stereo(tmp_path):
     from fixtures import dbmd_build as B
     seg = B.dbmd([B.segment(9, B.segment9(fps=3)), B.segment(10, B.segment10([1, 1]))])
     (tmp_path / "song.wav").write_bytes(B.adm_wav(channels=2, dbmd_payload=seg))
@@ -468,7 +468,9 @@ def test_adm_check_judges_a_built_master_and_skips_a_stereo_one(tmp_path):
     rows = {r["id"]: r for r in out["masters"][0]["rows"]}
     assert rows["S-511"]["verdict"] == "FAIL" and rows["S-511"]["measured"] == "25 fps"
     assert rows["S-520"]["verdict"] == "UNDETERMINED"
-    assert out["skipped"] == [str(tmp_path / "song_stereo.wav")]
+    # the stereo master named after it is paired with it (S-523), not skipped
+    assert out["skipped"] == []
+    assert out["stereoPairs"] == {str(tmp_path / "song.wav"): str(tmp_path / "song_stereo.wav")}
 
 
 def test_adm_check_on_a_core_without_it_says_so(monkeypatch):
